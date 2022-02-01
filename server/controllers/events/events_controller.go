@@ -477,6 +477,17 @@ func (e *VCSEventsController) HandleAzureDevopsPullRequestCommentedEvent(w http.
 		e.respond(w, logging.Debug, http.StatusOK, "Ignoring comment event since no comment is linked to payload; %s", azuredevopsReqID)
 		return
 	}
+
+	if resource.Comment.IsDeleted != nil && *resource.Comment.IsDeleted {
+		e.respond(w, logging.Debug, http.StatusOK, "Ignoring comment event since atlantis does not handle comment deletion events; %s", azuredevopsReqID)
+		return
+	}
+
+	if resource.Comment.Content == nil {
+		e.respond(w, logging.Debug, http.StatusOK, "Ignoring comment event since the comment's content is missing; %s", azuredevopsReqID)
+		return
+	}
+
 	strippedComment := bluemonday.StrictPolicy().SanitizeBytes([]byte(*resource.Comment.Content))
 
 	if resource.PullRequest == nil {
